@@ -21,7 +21,8 @@ public class MainFrame extends JFrame {
     private JPanel lastActiveNav = null;
 
     public MainFrame() {
-        service = new StudentService();
+        // MODULE 3: SINGLETON - Accessing the exact same single instance of the service.
+        service = StudentService.getInstance();
 
         setTitle("Student Management System");
         setSize(1100, 700);

@@ -1,62 +1,82 @@
 package service;
 
 import model.Student;
+import exception.DuplicateStudentException;
+import exception.InvalidMarksException;
+import exception.StudentNotFoundException;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class StudentService {
+// MODULE 3: INTERFACE IMPLEMENTATION - StudentService adheres to the StudentOperations contract.
+public class StudentService implements StudentOperations {
+    
+    // MODULE 3: SINGLETON DESIGN PATTERN - Step 1: Provide a private static instance of the class itself.
+    private static StudentService instance;
+
     // In-memory data store for the application
     private List<Student> students;
 
-    // CORE KEYWORD: 'static' variable keeps track of total students across all instances of the application.
+    // CORE KEYWORD: 'static' variable keeps track of total students across all instances.
     private static int totalStudents = 0;
 
-    public StudentService() {
+    // MODULE 3: SINGLETON DESIGN PATTERN - Step 2: Make the constructor private so it cannot be instantiated from outside.
+    private StudentService() {
         this.students = new ArrayList<>();
     }
 
-    public boolean addStudent(Student student) {
-        // Simple check to prevent duplicate IDs
-        if (findStudentById(student.getStudentId()) != null) {
-            return false;
+    // MODULE 3: SINGLETON DESIGN PATTERN - Step 3: Provide a public static method to get the single instance.
+    public static synchronized StudentService getInstance() {
+        if (instance == null) {
+            instance = new StudentService();
         }
-        students.add(student);
-        totalStudents++;
-        return true;
+        return instance;
     }
 
+    @Override
+    public void addStudent(Student student) throws DuplicateStudentException {
+        // Check for duplicates
+        try {
+            findStudentById(student.getStudentId());
+            // If found, throw duplicate exception
+            throw new DuplicateStudentException("A student with ID '" + student.getStudentId() + "' already exists.");
+        } catch (StudentNotFoundException e) {
+            // Expected behavior: ID is unique, so we can add safely
+            students.add(student);
+            totalStudents++;
+        }
+    }
+
+    @Override
     public List<Student> getAllStudents() {
         return new ArrayList<>(students); // Return a copy to prevent direct manipulation
     }
 
-    public Student findStudentById(String id) {
+    @Override
+    public Student findStudentById(String id) throws StudentNotFoundException {
         for (Student s : students) {
             if (s.getStudentId().equalsIgnoreCase(id)) {
                 return s;
             }
         }
-        return null;
+        // MODULE 3: EXCEPTIONS - Using 'throw' to raise the custom exception when a condition is met.
+        throw new StudentNotFoundException("Student with ID '" + id + "' could not be found.");
     }
 
-    public boolean updateStudentMarks(String id, double newMarks) {
+    @Override
+    public void updateStudentMarks(String id, double newMarks) throws StudentNotFoundException, InvalidMarksException {
         Student s = findStudentById(id);
-        if (s != null) {
-            s.updateMarks(newMarks);
-            return true;
-        }
-        return false;
+        s.updateMarks(newMarks); // Might throw InvalidMarksException
     }
 
-    public boolean deleteStudent(String id) {
+    @Override
+    public void deleteStudent(String id) throws StudentNotFoundException {
         Student s = findStudentById(id);
-        if (s != null) {
-            students.remove(s);
-            totalStudents--;
-            return true;
-        }
-        return false;
+        students.remove(s);
+        totalStudents--;
     }
 
+    @Override
     public double getAverageMarks() {
         if (students.isEmpty()) return 0.0;
         double sum = 0;
@@ -66,6 +86,7 @@ public class StudentService {
         return sum / students.size();
     }
 
+    @Override
     public Student getTopPerformer() {
         if (students.isEmpty()) return null;
         Student top = students.get(0);

@@ -2,6 +2,8 @@ package ui;
 
 import service.StudentService;
 import model.Student;
+import exception.StudentNotFoundException;
+import exception.InvalidMarksException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -84,15 +86,16 @@ public class UpdateMarksPanel extends JPanel {
 
     private void findStudent() {
         String id = searchIdField.getText().trim();
-        Student s = service.findStudentById(id);
-        if (s != null) {
+        // MODULE 3: EXCEPTION HANDLING - Gracefully handling lookup failures
+        try {
+            Student s = service.findStudentById(id);
             currentStudentId = s.getStudentId();
             infoLabel.setText("<html><b>Name:</b> " + s.getName() + " &nbsp;&nbsp; <b>Course:</b> " + s.getCourse() + "<br><b>Current Marks:</b> " + s.getMarks() + " (" + s.calculateGrade() + ")</html>");
             newMarksField.setText("");
             resultCard.setVisible(true);
-        } else {
+        } catch (StudentNotFoundException ex) {
             resultCard.setVisible(false);
-            JOptionPane.showMessageDialog(this, "Student not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Not Found", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -100,22 +103,23 @@ public class UpdateMarksPanel extends JPanel {
         try {
             double marks = Double.parseDouble(newMarksField.getText().trim());
             if (currentStudentId != null) {
-                Student s = service.findStudentById(currentStudentId);
-                if (marks == 100.0) {
-                    // OVERLOADING: compile-time polymorphism example. Update with a specific reason.
-                    s.updateMarks(marks, "Perfect Score Bonus!"); 
-                } else {
-                    s.updateMarks(marks);
+                // MODULE 3: EXCEPTION HANDLING - using try-catch-finally
+                try {
+                    service.updateStudentMarks(currentStudentId, marks);
+                    JOptionPane.showMessageDialog(this, "Marks updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    parentFrame.refreshDashboard();
+                    resultCard.setVisible(false);
+                    searchIdField.setText("");
+                    currentStudentId = null;
+                } catch (StudentNotFoundException | InvalidMarksException ex) {
+                    JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    // Just to demonstrate finally block usage for the viva
+                    System.out.println("Update operation attempted on ID: " + currentStudentId);
                 }
-                
-                JOptionPane.showMessageDialog(this, "Marks updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                parentFrame.refreshDashboard();
-                resultCard.setVisible(false);
-                searchIdField.setText("");
-                currentStudentId = null;
             }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Invalid marks.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Invalid marks. Please enter a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

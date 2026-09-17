@@ -2,6 +2,8 @@ package ui;
 
 import service.StudentService;
 import model.Student;
+import exception.DuplicateStudentException;
+import exception.InvalidMarksException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -93,13 +95,16 @@ public class AddStudentPanel extends JPanel {
                 return;
             }
 
-            Student s = new Student(id, name, age, course, marks);
-            if (service.addStudent(s)) {
+            // MODULE 3: EXCEPTION HANDLING - Using try-catch blocks to catch specific custom checked exceptions.
+            try {
+                Student s = new Student(id, name, age, course, marks);
+                service.addStudent(s);
                 JOptionPane.showMessageDialog(this, "Student Added Successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 clearForm();
                 parentFrame.refreshDashboard(); // Refresh dash on addition
-            } else {
-                JOptionPane.showMessageDialog(this, "Student ID already exists.", "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (DuplicateStudentException | InvalidMarksException ex) {
+                // Showing user-friendly popups instead of crashing
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Validation Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Invalid marks. Please enter a valid numeric value.", "Error", JOptionPane.ERROR_MESSAGE);

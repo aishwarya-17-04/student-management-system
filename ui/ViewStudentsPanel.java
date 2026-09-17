@@ -1,7 +1,7 @@
 package ui;
 
 import service.StudentService;
-import model.Student;
+import exception.StudentNotFoundException;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -10,6 +10,7 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.List;
+import model.Student;
 
 public class ViewStudentsPanel extends JPanel {
     private StudentService service;
@@ -114,10 +115,15 @@ public class ViewStudentsPanel extends JPanel {
             
             int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete student " + id + "?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
-                service.deleteStudent(id);
-                refreshTable();
-                parentFrame.refreshDashboard(); // Tell parent to update dashboard stats
-                JOptionPane.showMessageDialog(this, "Student deleted successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                // MODULE 3: EXCEPTION HANDLING - try-catch for safe deletion.
+                try {
+                    service.deleteStudent(id);
+                    refreshTable();
+                    parentFrame.refreshDashboard(); // Tell parent to update dashboard stats
+                    JOptionPane.showMessageDialog(this, "Student deleted successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                } catch (StudentNotFoundException ex) {
+                    JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         } else {
             JOptionPane.showMessageDialog(this, "Please select a student to delete.", "Warning", JOptionPane.WARNING_MESSAGE);
